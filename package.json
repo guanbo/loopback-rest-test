@@ -1,6 +1,6 @@
 {
   "name": "loopback-rest-test",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "loopback restful api test bootstrap",
   "main": "index.js",
   "scripts": {
@@ -23,6 +23,7 @@
   },
   "homepage": "https://github.com/guanbo/loopback-rest-test#readme",
   "dependencies": {
+    "formstream": "^1.1.0",
     "mocha": "^3.5.3",
     "superagent": "^3.6.1",
     "superagent-prefix": "0.0.2"
