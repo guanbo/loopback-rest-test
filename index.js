@@ -103,7 +103,7 @@ module.exports.boot = (app) => {
 
   after(() => {
     server.close(()=> {
-      process.exit(0);
+      // process.exit(0);
     });
   });
 }
