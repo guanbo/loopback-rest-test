@@ -1,15 +1,15 @@
 'use strict';
 
-const superagent = require('superagent');
-const prefix = require('superagent-prefix')('http://0.0.0.0:3000');
-const fs = require('fs');
-const path = require('path');
-const formstream = require('formstream');
+const superagent = require('superagent'),
+      fs = require('fs'),
+      path = require('path'),
+      formstream = require('formstream')
 
-let server;
+let server, prefix
 
 class Request {
   constructor(options) {
+    prefix = require('superagent-prefix')(options.stream || 'http://0.0.0.0:3000');
     this.credential = options.credential || {
       username: 'weixin.oV5Yms7LX0RPudwkz1X6G2Kilj9w',
       password: '123456',
