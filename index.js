@@ -55,6 +55,16 @@ class Request {
     req.send(json).end(done);
   }
 
+  patch(route, json, done) {
+    if (typeof json === 'function') {
+      done = json;
+      json = null;
+    }
+    let req = superagent.patch(route).use(prefix);
+    this.setAuthorization(req);
+    req.send(json).end(done);
+  }
+
   upload(route, filepath, done) {
     var req = superagent.post(route).use(prefix).accept('*/*');
     this.setAuthorization(req);
