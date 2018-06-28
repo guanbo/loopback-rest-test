@@ -28,5 +28,10 @@
     "superagent": "^3.6.1",
     "superagent-prefix": "0.0.2"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "body-parser": "^1.18.3",
+    "express": "^4.16.3",
+    "should": "^13.2.1",
+    "should-http": "^0.1.1"
+  }
 }

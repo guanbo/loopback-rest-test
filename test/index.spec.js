@@ -1,11 +1,34 @@
-# rest-test-bootstrap
-restful api test bootstrap
+'use strict';
 
-## Quick Start
+const rest = require('..');
+const express = require('express');
+const bodyParser = require('body-parser');
+const app = express();
 
-```js
-const rest = require('loopback-rest-test');
-rest.boot(require('../../server/server'));
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+
+app.post('/api/users/login', (req, res)=>{
+  res.status(200).json({id: Date.now()});
+});
+app.post('/api/users/logiout', (req, res)=>{
+  res.status(200).send('ok');
+});
+app.get('/api/orders', (req, res)=>{
+  res.status(200).json([{id:1}]);
+});
+app.post('/api/orders', (req, res)=>{
+  res.status(200).json(req.body);
+})
+
+let server
+before((done) => {
+  server = app.listen(3000, (err)=>{
+    console.log('Listen on http://localhost:'+server.address().port);
+    done(err);
+  });
+});
+
 
 describe('Promise', () => {
   const user = new rest.Request({
@@ -52,5 +75,3 @@ describe('Callback', () => {
     });
   });
 });
-
-```

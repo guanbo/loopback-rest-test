@@ -1,0 +1,4 @@
+--require should
+--require should-http
+--ui bdd
+--slow 1500

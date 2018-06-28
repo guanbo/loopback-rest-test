@@ -32,7 +32,26 @@ class Request {
     let req = superagent.get(route).use(prefix);
     this.setAuthorization(req);
     if (query) req.query(query);
-    req.end(done);
+    const p = new Promise((resolve, reject)=>{
+      req.end((err, res)=>{
+        if(done) return done(err, res);
+        if(err) return reject(err);
+        resolve(res.body);
+      });
+    });
+    if (!done) return p;
+  }
+
+  jsonp(req, json, done) {
+    this.setAuthorization(req);
+    const p = new Promise((resolve, reject)=>{
+      req.send(json).end((err, res)=>{
+        if(done) return done(err, res);
+        if(err) return reject(err);
+        resolve(res.body);
+      });
+    });
+    if (!done) return p;
   }
 
   post(route, json, done) {
@@ -41,8 +60,7 @@ class Request {
       json = null;
     }
     let req = superagent.post(route).use(prefix);
-    this.setAuthorization(req);
-    req.send(json).end(done);
+    return this.jsonp(req, json, done);
   }
 
   put(route, json, done) {
@@ -51,8 +69,7 @@ class Request {
       json = null;
     }
     let req = superagent.put(route).use(prefix);
-    this.setAuthorization(req);
-    req.send(json).end(done);
+    return this.jsonp(req, json, done);
   }
 
   patch(route, json, done) {
@@ -61,8 +78,7 @@ class Request {
       json = null;
     }
     let req = superagent.patch(route).use(prefix);
-    this.setAuthorization(req);
-    req.send(json).end(done);
+    return this.jsonp(req, json, done);
   }
 
   upload(route, filepath, done) {
@@ -88,19 +104,17 @@ class Request {
       credential = null;
     }
     credential = credential || this.credential;
-    let that = this;
-    this.post('/api/' + this.userModel + '/login?include=user', credential, (err, res) => {
-      that.accessToken = res.body;
-      done(err);
-    });
+    return this.post('/api/' + this.userModel + '/login?include=user', credential, done);
   }
 
   logout(done) {
     if (this.accessToken) {
-      this.post('/api/' + this.userModel + '/logout');
+      this.accessToken = null;
+      return this.post('/api/' + this.userModel + '/logout', done);
     }
     this.accessToken = null;
-    done();
+    if (done) return done();
+    return Promise.resolve();
   }
 
 }
