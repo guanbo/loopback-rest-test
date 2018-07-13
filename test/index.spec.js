@@ -9,15 +9,23 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
 app.post('/api/users/login', (req, res)=>{
-  res.status(200).json({id: Date.now()});
+  app.token = Date.now();
+  res.status(200).json({id: app.token});
 });
-app.post('/api/users/logiout', (req, res)=>{
+app.post('/api/users/logout', (req, res)=>{
+  app.token = null;
   res.status(200).send('ok');
 });
-app.get('/api/orders', (req, res)=>{
+function auth(req, res, next) {
+  if(!app.token) return res.sendStatus(401);
+  if(app.token.toString() !== req.headers['authorization']) return res.sendStatus(403);
+  next();
+}
+app.get('/api/orders', auth, (req, res)=>{
   res.status(200).json([{id:1}]);
 });
-app.post('/api/orders', (req, res)=>{
+
+app.post('/api/orders', auth, (req, res)=>{
   res.status(200).json(req.body);
 })
 

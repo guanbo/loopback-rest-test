@@ -45,7 +45,7 @@ class Request {
   jsonp(req, json, done) {
     this.setAuthorization(req);
     const p = new Promise((resolve, reject)=>{
-      req.send(json).end((err, res)=>{
+      req.send(json||{}).end((err, res)=>{
         if(done) return done(err, res);
         if(err) return reject(err);
         resolve(res.body);
@@ -104,17 +104,31 @@ class Request {
       credential = null;
     }
     credential = credential || this.credential;
-    return this.post('/api/' + this.userModel + '/login?include=user', credential, done);
+    const p = new Promise((resolve, reject)=>{
+      this.post('/api/' + this.userModel + '/login?include=user', credential, (err, res)=>{
+        if(err) {
+          if(done) return done(err); 
+          reject(err);
+        } else {
+          this.accessToken = {id: res.body.id};
+          if(done) return done();
+          resolve(res);
+        }
+      });
+    });
+    if(!done) return p;
   }
 
   logout(done) {
+    let _promise;
     if (this.accessToken) {
+      _promise = this.post('/api/' + this.userModel + '/logout', done);
       this.accessToken = null;
-      return this.post('/api/' + this.userModel + '/logout', done);
+    } else {
+      _promise = Promise.resolve();
+      if (done) return done();
     }
-    this.accessToken = null;
-    if (done) return done();
-    return Promise.resolve();
+    return _promise;
   }
 
 }
