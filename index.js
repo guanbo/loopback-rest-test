@@ -5,11 +5,11 @@ const superagent = require('superagent'),
       path = require('path'),
       formstream = require('formstream')
 
-let server, prefix
+let server;
 
 class Request {
   constructor(options) {
-    prefix = require('superagent-prefix')(options.stream || 'http://0.0.0.0:3000');
+    this.prefix = require('superagent-prefix')(options.stream || 'http://0.0.0.0:3000');
     this.credential = options.credential || {
       username: 'weixin.oV5Yms7LX0RPudwkz1X6G2Kilj9w',
       password: '123456',
@@ -29,7 +29,7 @@ class Request {
       done = query;
       query = null;
     }
-    let req = superagent.get(route).use(prefix);
+    let req = superagent.get(route).use(this.prefix);
     this.setAuthorization(req);
     if (query) req.query(query);
     const p = new Promise((resolve, reject)=>{
@@ -59,7 +59,7 @@ class Request {
       done = json;
       json = null;
     }
-    let req = superagent.post(route).use(prefix);
+    let req = superagent.post(route).use(this.prefix);
     return this.jsonp(req, json, done);
   }
 
@@ -68,7 +68,7 @@ class Request {
       done = json;
       json = null;
     }
-    let req = superagent.put(route).use(prefix);
+    let req = superagent.put(route).use(this.prefix);
     return this.jsonp(req, json, done);
   }
 
@@ -77,12 +77,12 @@ class Request {
       done = json;
       json = null;
     }
-    let req = superagent.patch(route).use(prefix);
+    let req = superagent.patch(route).use(this.prefix);
     return this.jsonp(req, json, done);
   }
 
   upload(route, filepath, done) {
-    var req = superagent.post(route).use(prefix).accept('*/*');
+    var req = superagent.post(route).use(this.prefix).accept('*/*');
     this.setAuthorization(req);
 
     req.on('response', function (res) {
@@ -104,17 +104,13 @@ class Request {
       credential = null;
     }
     credential = credential || this.credential;
-    const p = new Promise((resolve, reject)=>{
-      this.post('/api/' + this.userModel + '/login?include=user', credential, (err, res)=>{
-        if(err) {
-          if(done) return done(err); 
-          reject(err);
-        } else {
-          this.accessToken = {id: res.body.id};
-          if(done) return done();
-          resolve(res);
-        }
-      });
+    const p = this.post('/api/' + this.userModel + '/login?include=user', credential).then(res=>{
+      this.accessToken = {id: res.id};
+      if(done) return done();
+      return res;
+    }, err=>{
+      if(done) return done(err); 
+      return err;
     });
     if(!done) return p;
   }
