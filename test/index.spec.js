@@ -42,6 +42,7 @@ describe('Promise', () => {
   const user = new rest.Request({
     credential: { username: '18199999999', password: '123456' },
     userModel: 'users',
+    tokenKey: 'id'
   });
 
   before(async () => await user.login());
