@@ -105,7 +105,7 @@ class Request {
     }
     credential = credential || this.credential;
     const p = this.post('/api/' + this.userModel + '/login?include=user', credential).then(res=>{
-      this.accessToken = {id: res[this.tokenKey]};
+      this.accessToken = res;
       if(done) return done();
       return res;
     }, err=>{
