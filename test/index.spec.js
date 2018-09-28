@@ -1,42 +1,16 @@
 'use strict';
 
 const rest = require('..');
-const express = require('express');
-const bodyParser = require('body-parser');
-const app = express();
-
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
-
-app.post('/api/users/login', (req, res)=>{
-  app.token = Date.now();
-  res.status(200).json({id: app.token});
-});
-app.post('/api/users/logout', (req, res)=>{
-  app.token = null;
-  res.status(200).send('ok');
-});
-function auth(req, res, next) {
-  if(!app.token) return res.sendStatus(401);
-  if(app.token.toString() !== req.headers['authorization']) return res.sendStatus(403);
-  next();
-}
-app.get('/api/orders', auth, (req, res)=>{
-  res.status(200).json([{id:1}]);
-});
-
-app.post('/api/orders', auth, (req, res)=>{
-  res.status(200).json(req.body);
-})
-
-let server
+const server = require('./fixtures/server');
 before((done) => {
-  server = app.listen(3000, (err)=>{
-    console.log('Listen on http://localhost:'+server.address().port);
-    done(err);
-  });
+  server.boot(done);
 });
 
+const path = require('path');
+const fileOpts = {
+  name: 'card',
+  filepath: path.resolve(__dirname, 'fixtures', 'server.js')
+}
 
 describe('Promise', () => {
   const user = new rest.Request({
@@ -49,14 +23,24 @@ describe('Promise', () => {
   after(async () => await user.logout());
 
   it('should get ok', async () => {
-    const orders = await user.get('/api/orders');
-    orders.should.be.Array().and.not.empty();
+    const res = await user.get('/api/orders');
+    res.body.should.be.Array().and.not.empty();
   });
 
   it('should post ok', async () => {
     const order = {id:2};
     const res = await user.post('/api/orders', order);
-    res.should.have.property('id', order.id);
+    res.body.should.have.property('id', order.id);
+  });
+
+  it('should upload ok', async() => {
+    const res = await user.upload('/api/upload', fileOpts);
+    res.should.have.status(200);
+  });
+
+  it('should delete ok', async() => {
+    const res = await user.del('/api/orders');
+    res.should.have.status(200);
   });
 });
 
@@ -82,5 +66,19 @@ describe('Callback', () => {
       res.body.should.have.property('id', order.id);
       done();
     });
+  });
+
+  it('should upload ok', (done) => {
+    user.upload('/api/upload', fileOpts.filepath, (err, res)=>{
+      res.should.have.status(200);
+      done();
+    })
+  });
+
+  it('should delete ok', (done) => {
+    user.del('/api/orders', (err, res)=>{
+      res.should.have.status(200);
+      done();
+    })
   });
 });

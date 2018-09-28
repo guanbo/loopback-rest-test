@@ -1,9 +1,9 @@
 'use strict';
 
 const superagent = require('superagent'),
-      fs = require('fs'),
-      path = require('path'),
-      formstream = require('formstream')
+  fs = require('fs'),
+  path = require('path'),
+  formstream = require('formstream')
 
 let server;
 
@@ -32,11 +32,11 @@ class Request {
     let req = superagent.get(route).use(this.prefix);
     this.setAuthorization(req);
     if (query) req.query(query);
-    const p = new Promise((resolve, reject)=>{
-      req.end((err, res)=>{
-        if(done) return done(err, res);
-        if(err) return reject(err);
-        resolve(res.body);
+    const p = new Promise((resolve, reject) => {
+      req.end((err, res) => {
+        if (done) return done(err, res);
+        if (err) return reject(err);
+        resolve(res);
       });
     });
     if (!done) return p;
@@ -44,11 +44,11 @@ class Request {
 
   jsonp(req, json, done) {
     this.setAuthorization(req);
-    const p = new Promise((resolve, reject)=>{
-      req.send(json||{}).end((err, res)=>{
-        if(done) return done(err, res);
-        if(err) return reject(err);
-        resolve(res.body);
+    const p = new Promise((resolve, reject) => {
+      req.send(json || {}).end((err, res) => {
+        if (done) return done(err, res);
+        if (err) return reject(err);
+        resolve(res);
       });
     });
     if (!done) return p;
@@ -81,21 +81,50 @@ class Request {
     return this.jsonp(req, json, done);
   }
 
+  del(route, json, done) {
+    if (typeof json === 'function') {
+      done = json;
+      json = null;
+    }
+    let req = superagent.del(route).use(this.prefix);
+    return this.jsonp(req, json, done);
+  }
+
   upload(route, filepath, done) {
-    var req = superagent.post(route).use(this.prefix).accept('*/*');
+    let opts = { name: 'buffer' };
+    if (typeof filepath === 'object') {
+      Object.assign(opts, filepath);
+      filepath = opts.filepath;
+    }
+    if (!opts.filename) {
+      opts.filename = path.basename(filepath);
+    }
+
+    let req = superagent.post(route).use(this.prefix).accept('*/*');
     this.setAuthorization(req);
 
-    req.on('response', function (res) {
-      done(null, res);
+    const p = new Promise((resolve, reject) => {
+      req.on('response', function (res) {
+        let err = null;
+        if (parseInt(res.status) >= 400) err = new Error(res.body);
+        if (done) return done(err, res);
+        if (err) {
+          reject(err);
+        } else {
+          resolve(res);
+        }
+      });
+
+      fs.stat(filepath, function (err, stat) {
+        if (err) return done(err);
+        var form = formstream();
+        form.file(opts.name, filepath, opts.filename, stat.size);
+        req.set(form.headers());
+        form.pipe(req);
+      });
     });
 
-    fs.stat(filepath, function (err, stat) {
-      if (err) return done(err);
-      var form = formstream();
-      form.file('buffer', filepath, path.basename(filepath), stat.size);
-      req.set(form.headers());
-      form.pipe(req);
-    });
+    if (!done) return p;
   }
 
   login(credential, done) {
@@ -104,15 +133,15 @@ class Request {
       credential = null;
     }
     credential = credential || this.credential;
-    const p = this.post('/api/' + this.userModel + '/login?include=user', credential).then(res=>{
-      this.accessToken = res;
-      if(done) return done();
+    const p = this.post('/api/' + this.userModel + '/login?include=user', credential).then(res => {
+      this.accessToken = res.body;
+      if (done) return done();
       return res;
-    }, err=>{
-      if(done) return done(err); 
+    }, err => {
+      if (done) return done(err);
       return err;
     });
-    if(!done) return p;
+    if (!done) return p;
   }
 
   logout(done) {
@@ -136,7 +165,7 @@ module.exports.boot = (app) => {
   });
 
   after(() => {
-    server.close(()=> {
+    server.close(() => {
       // process.exit(0);
     });
   });
